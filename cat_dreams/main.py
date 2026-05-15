@@ -20,7 +20,8 @@ def main():
 
             if current_state == 'HUB':
                 hub.handle_event(event)
-                if hub.current_request and not hub.dialogue_active and event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+                if (hub.current_request and not hub.dialogue_active and event.type == pygame.KEYDOWN and
+                        event.key == pygame.K_RETURN):
                     current_state = 'BUILDING'
                     level = Level()
                     level.generate(max_depth=3)
