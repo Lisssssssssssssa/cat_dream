@@ -64,3 +64,9 @@ class Level:
         # Старт и финиш
         pygame.draw.circle(screen, (50, 50, 255), self.start, 10, 2)
         pygame.draw.circle(screen, (50, 255, 50), self.finish, 10, 2)
+
+    def remove_object_at(self, x: int, y: int, radius: int = 20):
+        self.objects = [
+            obj for obj in self.objects
+            if ((obj['x'] - x) ** 2 + (obj['y'] - y) ** 2) > radius ** 2
+        ]

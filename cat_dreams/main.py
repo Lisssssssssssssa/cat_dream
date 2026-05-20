@@ -2,6 +2,7 @@ import pygame
 import config as cfg
 from hub import Hub
 from levels.level import Level
+from ui.toolbar import Toolbar
 
 
 def main():
@@ -11,6 +12,7 @@ def main():
     hub = Hub()
     current_state = 'HUB'
     clock = pygame.time.Clock()
+    toolbar = Toolbar()
 
     running = True
     while running:
@@ -34,6 +36,30 @@ def main():
         elif current_state == 'BUILDING':
             if level:
                 level.draw(screen)
+                toolbar.draw(screen)
+
+                # --- Обработка событий мыши ---
+                mouse_pos = pygame.mouse.get_pos()
+
+                # Сначала проверяем, кликнули ли мы по тулбару
+                clicked_toolbar = toolbar.handle_event(event)
+
+                # Если клик был ЛКМ и НЕ по тулбару -> ставим объект
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    if not clicked_toolbar:
+                        obj_type = toolbar.get_selected_type()
+
+                        if obj_type == "eraser":
+                            # Если выбран ластик -> удаляем
+                            level.remove_object_at(mouse_pos[0], mouse_pos[1], radius=30)
+                        else:
+                            # Иначе -> добавляем
+                            level.add_object(obj_type, mouse_pos[0], mouse_pos[1])
+
+                # ПКМ всегда удаляет (быстрый доступ)
+                elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
+                    level.remove_object_at(mouse_pos[0], mouse_pos[1], radius=30)
+                    print(f"🗑️ Удален объект near ({mouse_pos[0]}, {mouse_pos[1]})")
                 font = pygame.font.Font(None, 32)
                 text = font.render('нажми esc чтобы вернуться', True, cfg.BLACK)
                 screen.blit(text, (10, 10))
