@@ -41,13 +41,17 @@ class Level:
     def add_object(self, obj_type: str, x: int, y: int):
         self.objects.append({'type': obj_type, 'x': x, 'y': y})
 
-    def draw(self, screen):
+    def draw(self, screen, camera_offset=(0, 0)):
+        """Отрисовывает уровень по сетке с учётом камеры."""
         # Рисуем стены и пол
         for y, row in enumerate(self.grid):
             for x, cell in enumerate(row):
-                rect = pygame.Rect(x * self.cell_size, y * self.cell_size,
-                                   self.cell_size, self.cell_size)
-                color = (50, 50, 70) if cell == 1 else (100, 100, 120)  # Стена / Пол
+                rect = pygame.Rect(
+                    x * self.cell_size - camera_offset[0],
+                    y * self.cell_size - camera_offset[1],
+                    self.cell_size, self.cell_size
+                )
+                color = (50, 50, 70) if cell == 1 else (100, 100, 120)
                 pygame.draw.rect(screen, color, rect)
 
         # Рисуем объекты
@@ -59,11 +63,17 @@ class Level:
                 'weapon': (255, 255, 50),
                 'object': (255, 165, 0)
             }.get(obj['type'], (128, 128, 128))
-            pygame.draw.circle(screen, color, (obj['x'], obj['y']), 8)
+            pygame.draw.circle(screen, color,
+                               (obj['x'] - camera_offset[0], obj['y'] - camera_offset[1]),
+                               8)
 
         # Старт и финиш
-        pygame.draw.circle(screen, (50, 50, 255), self.start, 10, 2)
-        pygame.draw.circle(screen, (50, 255, 50), self.finish, 10, 2)
+        pygame.draw.circle(screen, (50, 50, 255),
+                           (self.start[0] - camera_offset[0], self.start[1] - camera_offset[1]),
+                           10, 2)
+        pygame.draw.circle(screen, (50, 255, 50),
+                           (self.finish[0] - camera_offset[0], self.finish[1] - camera_offset[1]),
+                           10, 2)
 
     def remove_object_at(self, x: int, y: int, radius: int = 20):
         self.objects = [

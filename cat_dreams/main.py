@@ -4,12 +4,16 @@ from hub import Hub
 from levels.level import Level
 from levels.validator import LevelValidator
 from ui.toolbar import Toolbar
+from entities.player import Player
 
 
 def main():
     pygame.init()
     screen = pygame.display.set_mode((cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT))
     pygame.display.set_caption("Cat_dreams")
+    player = None
+    camera = [0, 0]
+    current_level_report = {}
 
     hub = Hub()
     toolbar = Toolbar()
@@ -47,6 +51,7 @@ def main():
                             level.objects,
                             hub.current_request.required
                         )
+                        current_level_report = report
 
                         print("\n" + "=" * 50)
                         print("📋 ОТЧЕТ ВАЛИДАЦИИ:")
@@ -58,6 +63,7 @@ def main():
                         print("=" * 50 + "\n")
                     else:
                         print("⚠️ Нет уровня или ТЗ для проверки!")
+                        current_level_report = {}
 
                 elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     mouse_pos = pygame.mouse.get_pos()
@@ -78,6 +84,15 @@ def main():
                         level.remove_object_at(mouse_pos[0], mouse_pos[1], radius=30)
                         print("️ Объект удален (ПКМ)")
 
+                elif event.type == pygame.KEYDOWN and event.key == pygame.K_p:
+                    # Используем сохранённый отчёт!
+                    if level and current_level_report.get('is_valid', False):
+                        current_state = 'PLAYING'
+                        player = Player(level.start[0], level.start[1])
+                        print("🐱 Режим игры запущен!")
+                    else:
+                        print("⚠️ Уровень не прошёл валидацию! Нельзя запустить.")
+
         screen.fill(cfg.LIGHT_BLUE)
 
         if current_state == 'HUB':
@@ -91,6 +106,36 @@ def main():
             font = pygame.font.Font(None, 32)
             hint_text = font.render('W - Проверить | ESC - Назад', True, cfg.BLACK)
             screen.blit(hint_text, (10, 10))
+
+        elif current_state == 'PLAYING' and player:
+            keys = pygame.key.get_pressed()
+            dx = 0
+            if keys[pygame.K_LEFT] or keys[pygame.K_a]: dx = -1
+            if keys[pygame.K_RIGHT] or keys[pygame.K_d]: dx = 1
+            player.move(dx)
+            if keys[pygame.K_SPACE] or keys[pygame.K_UP]: player.jump()
+            player.update(level.grid, level.cell_size)
+            # Камера следует за игроком (центрируем)
+            camera[0] = player.x - cfg.SCREEN_WIDTH // 2
+            camera[1] = player.y - cfg.SCREEN_HEIGHT // 2
+            # Ограничение камеры границами уровня
+            camera[0] = max(0, min(camera[0], level.width - cfg.SCREEN_WIDTH))
+            camera[1] = max(0, min(camera[1], level.height - cfg.SCREEN_HEIGHT))
+            # --- ВАЖНО: РИСУЕМ УРОВЕНЬ С КАМЕРОЙ --
+            level.draw(screen, camera_offset=camera)  # <-- Эта строка была пропущена!
+            # --- РИСУЕМ ИГРОКА ПОВЕРХ УРОВНЯ ---
+            player.draw(screen, camera_offset=camera)
+            # Проверка победы/поражения (оставляем как есть)
+            dist_to_finish = ((player.x - level.finish[0]) ** 2 + (player.y - level.finish[1]) ** 2) ** 0.5
+            if dist_to_finish < 30:
+                print("🐱 ПОБЕДА! Сон пройден!")
+                current_state = 'HUB'
+            for obj in level.objects:
+                if obj['type'] == 'enemy':
+                    dist = ((player.x - obj['x']) ** 2 + (player.y - obj['y']) ** 2) ** 0.5
+                    if dist < 20:
+                        print("💀 Поражение! Кот столкнулся с врагом.")
+                        player.x, player.y = level.start
 
         pygame.display.flip()
         clock.tick(60)
