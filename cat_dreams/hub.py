@@ -14,7 +14,7 @@ class Hub:
             name="Барсик",
             problem=req.problem,
             request=req,
-            position=(cfg.SCREEN_WIDTH // 2, cfg.SCREEN_HEIGHT - 100)
+            position=(200, cfg.SCREEN_HEIGHT - 700)
         )
 
         self.background = pygame.image.load("assets/backgrounds/house.png").convert()
@@ -27,22 +27,23 @@ class Hub:
     def handle_event(self, event) -> bool:
         """Обрабатывает событие. Возвращает True, если событие обработано."""
         if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-            if self.dialogue_active:
-                self.current_request = self.current_client.request
-                self.dialogue_active = False
-                print(f"ТЗ: {self.current_request}")
-                return True
-            else:
+            if not self.dialogue_active:
                 self.dialogue_active = True
-                return True
+                self.current_request = self.current_client.request
+                print(f"ТЗ: {self.current_request}")
+            else:
+                self.dialogue_active = False
+            return True
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if self.current_client and self.current_client.get_rect().collidepoint(event.pos):
-                self.dialogue_active = True
+                if not self.dialogue_active:
+                    self.dialogue_active = True
+                    self.current_request = self.current_client.request
+                    print(f"ТЗ: {self.current_request}")
+                else:
+                    self.dialogue_active = False
                 return True
         return False
-
-    def update(self):
-        pass
 
     def _draw_dialogue_box(self, screen):
         """Рисует диалоговое окно."""
