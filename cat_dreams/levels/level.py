@@ -69,7 +69,7 @@ class Level:
                     wall_surf.fill((30, 30, 40, 90))  # (R, G, B, A)
                     screen.blit(wall_surf, (rect.x, rect.y))
                 else:
-                    pygame.draw.rect(screen, (40, 30, 60, 200), rect)  # комната
+                    pygame.draw.rect(screen, (60, 50, 90), rect)  # комната
 
         # Рисуем объекты
         for obj in self.objects:
@@ -97,3 +97,15 @@ class Level:
             obj for obj in self.objects
             if ((obj['x'] - x) ** 2 + (obj['y'] - y) ** 2) > radius ** 2
         ]
+
+    def is_walkable_pixel(self, px: int, py: int) -> bool:
+        """Проверяет, находится ли пиксель (px, py) на полу (не на стене)."""
+        # Переводим пиксельные координаты в координаты сетки
+        grid_x = int(px // self.cell_size)
+        grid_y = int(py // self.cell_size)
+
+        # Проверяем границы
+        if not (0 <= grid_y < len(self.grid)) or not (0 <= grid_x < len(self.grid[0])):
+            return False
+
+        return self.grid[grid_y][grid_x] == 0

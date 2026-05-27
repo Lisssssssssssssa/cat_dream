@@ -32,7 +32,7 @@ def main():
                 if (hub.current_request and not hub.dialogue_active and
                         event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN):
                     current_state = 'BUILDING'
-                    level = Level()
+                    level = Level(width=cfg.SCREEN_WIDTH, height=cfg.SCREEN_HEIGHT - 80, cell_size=32)
                     level.generate(max_depth=3)
                     print("🏗️ Уровень сгенерирован!")
 
@@ -75,8 +75,11 @@ def main():
                             level.remove_object_at(mouse_pos[0], mouse_pos[1], radius=30)
                             print("🗑️ Объект удален")
                         else:
-                            level.add_object(obj_type, mouse_pos[0], mouse_pos[1])
-                            print(f"➕ Добавлен: {obj_type}")
+                            if level.is_walkable_pixel(mouse_pos[0], mouse_pos[1]):
+                                level.add_object(obj_type, mouse_pos[0], mouse_pos[1])
+                                print(f"➕ Добавлен: {obj_type} в ({mouse_pos[0]}, {mouse_pos[1]})")
+                            else:
+                                print("⚠️ Нельзя ставить объект в стену!")
 
                 elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
                     if level:
@@ -99,7 +102,7 @@ def main():
             hub.draw(screen)
 
         elif current_state == 'BUILDING' and level:
-            level.draw(screen)
+            level.draw(screen, camera_offset=(0, 0))
             toolbar.draw(screen)
 
             # Подсказка на экране
@@ -120,7 +123,7 @@ def main():
             camera[1] = player.y - cfg.SCREEN_HEIGHT // 2
             # Ограничение камеры границами уровня
             camera[0] = max(0, min(camera[0], level.width - cfg.SCREEN_WIDTH))
-            camera[1] = max(0, min(camera[1], level.height - cfg.SCREEN_HEIGHT))
+            camera[1] = max(0, min(camera[1], level.height - cfg.SCREEN_HEIGHT + 90))
             # --- ВАЖНО: РИСУЕМ УРОВЕНЬ С КАМЕРОЙ --
             level.draw(screen, camera_offset=camera)  # <-- Эта строка была пропущена!
             # --- РИСУЕМ ИГРОКА ПОВЕРХ УРОВНЯ ---
