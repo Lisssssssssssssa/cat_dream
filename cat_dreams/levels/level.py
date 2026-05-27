@@ -2,6 +2,7 @@ from typing import List, Tuple, Dict
 from .bsp_generator import generate_bsp_grid
 import pygame
 import config as cfg
+import os
 
 
 class Level:
@@ -14,6 +15,11 @@ class Level:
         self.objects: List[Dict] = []
         self.start: Tuple[int, int] = (0, 0)
         self.finish: Tuple[int, int] = (0, 0)
+
+        bg_path = os.path.join(cfg.ASSETS_PATH, 'backgrounds', 'dream_bg.png')
+        self.bg_surface = pygame.image.load(bg_path).convert_alpha()
+        self.bg_surface.set_alpha(60)
+        self.bg_surface = pygame.transform.scale(self.bg_surface, (cfg.SCREEN_WIDTH * 2, cfg.SCREEN_HEIGHT))
 
     def generate(self, max_depth: int = 4):
         print(f"Начинаю генерацию BSP (depth={max_depth}, cell_size={self.cell_size})...")
@@ -44,6 +50,13 @@ class Level:
     def draw(self, screen, camera_offset=(0, 0)):
         """Отрисовывает уровень по сетке с учётом камеры."""
         # Рисуем стены и пол
+        screen.fill((10, 5, 30))
+
+        cloud_scroll_x = -camera_offset[0] * 0.5
+        cloud_scroll_y = -camera_offset[1] * 0.3
+        screen.blit(self.bg_surface, (cloud_scroll_x, cloud_scroll_y))
+        screen.blit(self.bg_surface, (cloud_scroll_x + cfg.SCREEN_WIDTH, cloud_scroll_y))
+
         for y, row in enumerate(self.grid):
             for x, cell in enumerate(row):
                 rect = pygame.Rect(
@@ -51,8 +64,12 @@ class Level:
                     y * self.cell_size - camera_offset[1],
                     self.cell_size, self.cell_size
                 )
-                color = (50, 50, 70) if cell == 1 else (100, 100, 120)
-                pygame.draw.rect(screen, color, rect)
+                if cell == 1:
+                    wall_surf = pygame.Surface((self.cell_size, self.cell_size), pygame.SRCALPHA)
+                    wall_surf.fill((30, 30, 40, 90))  # (R, G, B, A)
+                    screen.blit(wall_surf, (rect.x, rect.y))
+                else:
+                    pygame.draw.rect(screen, (40, 30, 60, 200), rect)  # комната
 
         # Рисуем объекты
         for obj in self.objects:
