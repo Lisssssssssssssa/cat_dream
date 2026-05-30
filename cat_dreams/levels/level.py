@@ -36,12 +36,11 @@ class Level:
                     floor_cells.append((x * self.cell_size + self.cell_size // 2,
                                         y * self.cell_size + self.cell_size // 2))
 
-        if len(floor_cells) >= 2:
-            self.start = floor_cells[0]
-            self.finish = floor_cells[-1]
-        elif floor_cells:
-            self.start = floor_cells[0]
-            self.finish = floor_cells[0]
+        if floor_cells:
+            self.start = min(floor_cells, key=lambda p: (p[0], p[1]))  # левый верхний
+            self.finish = max(floor_cells, key=lambda p: (p[0], p[1]))  # правый нижний
+        else:
+            self.start, self.finish = (0, 0), (0, 0)
         print(f"Генерация завершена Найдено клеток пола: {len(floor_cells)}")
 
     def add_object(self, obj_type: str, x: int, y: int):
