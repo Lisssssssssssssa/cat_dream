@@ -8,11 +8,10 @@ class Toolbar:
     def __init__(self):
         self.tools = [
             {"name": "Враг", "type": "enemy", "color": (255, 80, 80)},
-            {"name": "Финиш", "type": "finish", "color": (80, 255, 80)},
             {"name": "Оружие", "type": "weapon", "color": (255, 255, 80)},
-            {"name": "Объект", "type": "object", "color": (255, 165, 0)},
-            {"name": "Старт", "type": "start", "color": (80, 80, 255)},
-            {"name": "Ластик", "type": "eraser", "color": (100, 100, 100)}
+            {"name": "Ластик", "type": "eraser", "color": (100, 100, 100)},
+            {"name": "Платформа", "type": "platform", "color": (100, 100, 255)},
+            {"name": "Лестница", "type": "ladder", "color": (150, 100, 100)}
         ]
         self.selected_index = 0
         self.height = 80  # Чуть выше для удобства

@@ -115,15 +115,44 @@ def main():
             dx = 0
             if keys[pygame.K_LEFT] or keys[pygame.K_a]: dx = -1
             if keys[pygame.K_RIGHT] or keys[pygame.K_d]: dx = 1
-            player.move(dx)
+            on_ladder = False
+            for obj in level.objects:
+                if obj['type'] == 'ladder':
+                    obj_left = obj['x'] - obj.get('width', level.cell_size) // 2
+                    obj_right = obj['x'] + obj.get('width', level.cell_size) // 2
+                    obj_top = obj['y'] - obj.get('height', level.cell_size) // 2
+                    obj_bottom = obj['y'] + obj.get('height', level.cell_size) // 2
+
+                    if (player.x + player.width > obj_left and player.x < obj_right and
+                        player.y + player.height > obj_top and player.y < obj_bottom):
+                        on_ladder = True
+                        break
+
+            # Управление
+            if on_ladder:
+                # На лестнице: можно подниматься/спускаться
+                player.vel_x = dx * player.speed
+                if keys[pygame.K_UP] or keys[pygame.K_w]:
+                    player.vel_y = -player.speed
+                elif keys[pygame.K_DOWN] or keys[pygame.K_s]:
+                    player.vel_y = player.speed
+                else:
+                    player.vel_y = 0  # Не держим движение по вертикали, если не нажато
+            else:
+                # Обычное движение
+                player.move(dx)
+                if keys[pygame.K_SPACE] or keys[pygame.K_UP]: player.jump()
+                else: player.vel_y = min(player.vel_y, player.jump_power * -0.5)  # Не ускоряем падение
+
+            player.update(level.grid, level.cell_size, level.objects)
             if keys[pygame.K_SPACE] or keys[pygame.K_UP]: player.jump()
-            player.update(level.grid, level.cell_size)
+            player.update(level.grid, level.cell_size, level.objects)
             # Камера следует за игроком (центрируем)
             camera[0] = player.x - cfg.SCREEN_WIDTH // 2
             camera[1] = player.y - cfg.SCREEN_HEIGHT // 2
             # Ограничение камеры границами уровня
             camera[0] = max(0, min(camera[0], level.width - cfg.SCREEN_WIDTH))
-            camera[1] = max(0, min(camera[1], level.height - cfg.SCREEN_HEIGHT + 90))
+            camera[1] = max(0, min(camera[1], level.height - cfg.SCREEN_HEIGHT))
             # --- ВАЖНО: РИСУЕМ УРОВЕНЬ С КАМЕРОЙ --
             level.draw(screen, camera_offset=camera)  # <-- Эта строка была пропущена!
             # --- РИСУЕМ ИГРОКА ПОВЕРХ УРОВНЯ ---

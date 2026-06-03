@@ -4,7 +4,7 @@ REQUESTS = [
     Request(
         name="Боюсь пылесоса",
         problem="Мне снится пылесос. Помоги победить страх.",
-        required=["enemy", "weapon", "finish"],
+        required=["enemy", "weapon"],
         forbidden=["замкнутые пространства"]
     ),
     Request(

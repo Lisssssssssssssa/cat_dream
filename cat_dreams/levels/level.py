@@ -44,7 +44,31 @@ class Level:
         print(f"Генерация завершена Найдено клеток пола: {len(floor_cells)}")
 
     def add_object(self, obj_type: str, x: int, y: int):
-        self.objects.append({'type': obj_type, 'x': x, 'y': y})
+        grid_x, grid_y = int(x // self.cell_size), int(y // self.cell_size)
+
+        if obj_type == "platform":
+            # Горизонтальная платформа: 3 клетки в ширину, 1 в высоту
+            for dx in range(3):
+                self.objects.append({
+                    'type': 'platform',
+                    'x': (grid_x + dx) * self.cell_size + self.cell_size // 2,
+                    'y': grid_y * self.cell_size + self.cell_size // 2,
+                    'width': self.cell_size * 3,
+                    'height': self.cell_size
+                })
+        elif obj_type == "ladder":
+            # Вертикальная лестница: 1 клетка в ширину, 3 в высоту
+            for dy in range(3):
+                self.objects.append({
+                    'type': 'ladder',
+                    'x': grid_x * self.cell_size + self.cell_size // 2,
+                    'y': (grid_y + dy) * self.cell_size + self.cell_size // 2,
+                    'width': self.cell_size,
+                    'height': self.cell_size * 3
+                })
+        else:
+            # Старая логика для enemy, weapon и т.д.
+            self.objects.append({'type': obj_type, 'x': x, 'y': y})
 
     def draw(self, screen, camera_offset=(0, 0)):
         """Отрисовывает уровень по сетке с учётом камеры."""
