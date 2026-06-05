@@ -48,11 +48,15 @@ class LevelValidator:
         Проверяет, содержит ли уровень все обязательные объекты из ТЗ.
         Возвращает словарь: {'враг': True, 'финиш': False, ...}
         """
-        found_types = {obj['type'] for obj in objects}
-        result = {}
+        from collections import Counter
+        obj_counts = Counter(obj['type'] for obj in objects)
 
+        result = {}
         for req in required:
-            result[req] = req in found_types
+            if req == "toy":
+                result[req] = obj_counts.get("toy", 0) >= 3
+            else:
+                result[req] = req in obj_counts
 
         return result
 

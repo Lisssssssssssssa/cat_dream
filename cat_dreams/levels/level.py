@@ -3,6 +3,7 @@ from .bsp_generator import generate_bsp_grid
 import pygame
 import config as cfg
 import os
+import random
 
 
 class Level:
@@ -41,6 +42,26 @@ class Level:
             self.finish = max(floor_cells, key=lambda p: (p[0], p[1]))  # правый нижний
         else:
             self.start, self.finish = (0, 0), (0, 0)
+
+        valid_cells = [
+            p for p in floor_cells
+            if p != self.start and p != self.finish
+        ]
+
+        # Если мало клеток — берём сколько можно (минимум 3)
+        if len(valid_cells) >= 3:
+            toy_positions = random.sample(valid_cells, 3)
+        else:
+            toy_positions = valid_cells[:]  # бери всё, что есть
+
+        # Добавляем игрушки как объекты
+        for tx, ty in toy_positions:
+            self.objects.append({
+                'type': 'toy',
+                'x': tx,
+                'y': ty,
+                'radius': 12
+            })
         print(f"Генерация завершена Найдено клеток пола: {len(floor_cells)}")
 
     def add_object(self, obj_type: str, x: int, y: int):

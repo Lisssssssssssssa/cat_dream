@@ -145,6 +145,12 @@ def main():
                 else: player.vel_y = min(player.vel_y, player.jump_power * -0.5)  # Не ускоряем падение
 
             player.update(level.grid, level.cell_size, level.objects)
+            for obj in level.objects[:]:  # копия списка, чтобы не ломать при удалении
+                if obj['type'] == 'toy':
+                    dist = ((player.x - obj['x']) ** 2 + (player.y - obj['y']) ** 2) ** 0.5
+                    if dist < 25:
+                        print("🎉 Собрана игрушка!")
+                        level.objects.remove(obj)
             if keys[pygame.K_SPACE] or keys[pygame.K_UP]: player.jump()
             player.update(level.grid, level.cell_size, level.objects)
             # Камера следует за игроком (центрируем)
