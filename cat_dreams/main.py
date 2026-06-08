@@ -168,12 +168,21 @@ def main():
             if dist_to_finish < 30:
                 print("🐱 ПОБЕДА! Сон пройден!")
                 current_state = 'HUB'
-            for obj in level.objects:
-                if obj['type'] == 'enemy':
+            for obj in level.objects[:]:  # [:] — копия, чтобы можно было удалять
+                if obj['type'] == 'weapon':
                     dist = ((player.x - obj['x']) ** 2 + (player.y - obj['y']) ** 2) ** 0.5
-                    if dist < 20:
-                        print("💀 Поражение! Кот столкнулся с врагом.")
-                        player.x, player.y = level.start
+                    if dist < 25:
+                        player.pickup_weapon()
+                        level.objects.remove(obj)  # подобрали — исчезло
+                elif obj['type'] == 'enemy':
+                    dist = ((player.x - obj['x']) ** 2 + (player.y - obj['y']) ** 2) ** 0.5
+                    if dist < 25:
+                        if player.attack_enemy():  # атакуем
+                            level.objects.remove(obj)  # враг побеждён
+                        else:
+                            # поражение
+                            print("💀 Кот столкнулся с врагом без оружия! Поражение!")
+                            player.x, player.y = level.start
 
         pygame.display.flip()
         clock.tick(60)

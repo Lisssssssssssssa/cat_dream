@@ -21,6 +21,7 @@ class Player:
         self.anim_frame = 0
         self.anim_timer = 0
         self.anim_speed = 0.3
+        self.has_weapon = False
 
         sprite_path = os.path.join(cfg.ASSETS_PATH, 'sprites', 'cat_run.png')
         self.sprite_sheet = pygame.image.load(sprite_path).convert_alpha()
@@ -105,6 +106,19 @@ class Player:
 
     def move(self, dx):
         self.vel_x = dx * self.speed
+
+    def pickup_weapon(self):
+        self.has_weapon = True
+        print("⚔️ Кот подобрал оружие!")
+
+    def attack_enemy(self):
+        if self.has_weapon:
+            self.has_weapon = False  # оружие расходуется
+            print("💥 Кот победил врага!")
+            return True
+        else:
+            print("😿 Кот без оружия! Поражение!")
+            return False
 
     def draw(self, screen, camera_offset=(0, 0)):
         self.anim_frame = max(0, min(self.anim_frame, len(self.frames) - 1))

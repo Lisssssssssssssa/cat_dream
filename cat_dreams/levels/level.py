@@ -4,6 +4,7 @@ import pygame
 import config as cfg
 import os
 import random
+from math import dist
 
 
 class Level:
@@ -16,6 +17,7 @@ class Level:
         self.objects: List[Dict] = []
         self.start: Tuple[int, int] = (0, 0)
         self.finish: Tuple[int, int] = (0, 0)
+        self.rooms: List[Tuple[int, int, int, int]] = []
 
         bg_path = os.path.join(cfg.ASSETS_PATH, 'backgrounds', 'dream_bg.png')
         self.bg_surface = pygame.image.load(bg_path).convert_alpha()
@@ -24,7 +26,7 @@ class Level:
 
     def generate(self, max_depth: int = 4):
         print(f"Начинаю генерацию BSP (depth={max_depth}, cell_size={self.cell_size})...")
-        self.grid = generate_bsp_grid(
+        self.grid, self.rooms = generate_bsp_grid(
             self.width, self.height,
             cell_size=self.cell_size,
             max_depth=max_depth
@@ -43,26 +45,42 @@ class Level:
         else:
             self.start, self.finish = (0, 0), (0, 0)
 
-        valid_cells = [
-            p for p in floor_cells
-            if p != self.start and p != self.finish
-        ]
+        start_room = None
+        finish_room = None
+        for room in self.rooms:
+            rx, ry, rw, rh = room
+            # Проверим, находится ли start в этой комнате
+            if (self.start[0] // self.cell_size >= rx and
+                self.start[0] // self.cell_size < rx + rw and
+                self.start[1] // self.cell_size >= ry and
+                self.start[1] // self.cell_size < ry + rh):
+                start_room = room
 
-        # Если мало клеток — берём сколько можно (минимум 3)
-        if len(valid_cells) >= 3:
-            toy_positions = random.sample(valid_cells, 3)
+            if (self.finish[0] // self.cell_size >= rx and
+                self.finish[0] // self.cell_size < rx + rw and
+                self.finish[1] // self.cell_size >= ry and
+                self.finish[1] // self.cell_size < ry + rh
+                ):
+                finish_room = room
+        # Выберем 3 комнаты, исключая start/finish
+        available_rooms = [r for r in self.rooms if r != start_room and r != finish_room]
+        if len(available_rooms) >= 3:
+            chosen_rooms = random.sample(available_rooms, 3)
         else:
-            toy_positions = valid_cells[:]  # бери всё, что есть
-
-        # Добавляем игрушки как объекты
-        for tx, ty in toy_positions:
+            chosen_rooms = available_rooms[:]
+        # В центре каждой комнаты ставим игрушку
+        for room in chosen_rooms:
+            rx, ry, rw, rh = room
+            cx = (rx + rw // 2) * self.cell_size + self.cell_size // 2
+            cy = (ry + rh // 2) * self.cell_size + self.cell_size // 2
             self.objects.append({
                 'type': 'toy',
-                'x': tx,
-                'y': ty,
+                'x': cx,
+                'y': cy,
                 'radius': 12
             })
-        print(f"Генерация завершена Найдено клеток пола: {len(floor_cells)}")
+
+    print(f"Генерация завершена Найдено клеток пола:")
 
     def add_object(self, obj_type: str, x: int, y: int):
         grid_x, grid_y = int(x // self.cell_size), int(y // self.cell_size)
