@@ -183,6 +183,14 @@ def main():
                             # поражение
                             print("💀 Кот столкнулся с врагом без оружия! Поражение!")
                             player.x, player.y = level.start
+                elif obj['type'] == 'spike':
+                    dist = ((player.x - obj['x']) ** 2 + (player.y - obj['y']) ** 2) ** 0.5
+                    if dist < 25:
+                        print("🗡️ Кот наступил на шип! Возвращается к началу!")
+                        player.x = float(level.start[0])
+                        player.y = float(level.start[1])
+                        player.vel_x = 0
+                        player.vel_y = 0
 
         pygame.display.flip()
         clock.tick(60)

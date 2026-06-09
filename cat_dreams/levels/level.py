@@ -18,6 +18,10 @@ class Level:
         self.start: Tuple[int, int] = (0, 0)
         self.finish: Tuple[int, int] = (0, 0)
         self.rooms: List[Tuple[int, int, int, int]] = []
+        self.placed_platforms = 0
+        self.max_platforms = 5
+        self.placed_ladders = 0
+        self.max_ladders = 10
 
         bg_path = os.path.join(cfg.ASSETS_PATH, 'backgrounds', 'dream_bg.png')
         self.bg_surface = pygame.image.load(bg_path).convert_alpha()
@@ -59,8 +63,7 @@ class Level:
             if (self.finish[0] // self.cell_size >= rx and
                 self.finish[0] // self.cell_size < rx + rw and
                 self.finish[1] // self.cell_size >= ry and
-                self.finish[1] // self.cell_size < ry + rh
-                ):
+                self.finish[1] // self.cell_size < ry + rh):
                 finish_room = room
         # Выберем 3 комнаты, исключая start/finish
         available_rooms = [r for r in self.rooms if r != start_room and r != finish_room]
@@ -80,13 +83,16 @@ class Level:
                 'radius': 12
             })
 
-    print(f"Генерация завершена Найдено клеток пола:")
+    print(f"Генерация завершена Найдено клеток пола: ")
 
     def add_object(self, obj_type: str, x: int, y: int):
         grid_x, grid_y = int(x // self.cell_size), int(y // self.cell_size)
 
         if obj_type == "platform":
-            # Горизонтальная платформа: 3 клетки в ширину, 1 в высоту
+            if self.placed_platforms >= self.max_platforms:
+                print("❌ Нельзя поставить больше платформ!")
+                return
+                # Горизонтальная платформа: 3 клетки в ширину, 1 в высоту
             for dx in range(3):
                 self.objects.append({
                     'type': 'platform',
@@ -95,7 +101,12 @@ class Level:
                     'width': self.cell_size * 3,
                     'height': self.cell_size
                 })
+            self.placed_platforms += 1  # 🔥 Увеличиваем счётчик
+
         elif obj_type == "ladder":
+            if self.placed_ladders >= self.max_ladders:
+                print("❌ Нельзя поставить больше лестниц!")
+                return
             # Вертикальная лестница: 1 клетка в ширину, 3 в высоту
             for dy in range(3):
                 self.objects.append({
@@ -105,6 +116,8 @@ class Level:
                     'width': self.cell_size,
                     'height': self.cell_size * 3
                 })
+            self.placed_ladders += 1  # 🔥 Увеличиваем счётчик
+
         else:
             # Старая логика для enemy, weapon и т.д.
             self.objects.append({'type': obj_type, 'x': x, 'y': y})
@@ -155,10 +168,20 @@ class Level:
                            10, 2)
 
     def remove_object_at(self, x: int, y: int, radius: int = 20):
-        self.objects = [
-            obj for obj in self.objects
-            if ((obj['x'] - x) ** 2 + (obj['y'] - y) ** 2) > radius ** 2
-        ]
+        protected_types = {'spike', 'toy', 'start', 'finish'}
+        to_remove = []
+        for i, obj in enumerate(self.objects):
+            if ((obj['x'] - x) ** 2 + (obj['y'] - y) ** 2) <= radius ** 2 and obj.get('type') not in protected_types:
+                to_remove.append(i)
+
+        # Удаляем в обратном порядке, чтобы не сломать индексы
+        for i in reversed(to_remove):
+            obj = self.objects[i]
+            if obj['type'] == 'platform':
+                self.placed_platforms = max(0, self.placed_platforms - 1)
+            elif obj['type'] == 'ladder':
+                self.placed_ladders = max(0, self.placed_ladders - 1)
+            del self.objects[i]
 
     def is_walkable_pixel(self, px: int, py: int) -> bool:
         """Проверяет, находится ли пиксель (px, py) на полу (не на стене)."""

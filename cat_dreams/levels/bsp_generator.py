@@ -95,13 +95,13 @@ def carve_corridor(grid: List[List[int]], start: Tuple[int, int], end: Tuple[int
 
 
 def generate_bsp_grid(width: int, height: int, cell_size: int = 16,
-                      max_depth: int = 5, min_size: int = 4) -> List[List[int]]:
+                      max_depth: int = 5, min_size: int = 4) -> Tuple[List[List[int]], List[Tuple[int, int, int, int]]]:
 
     cols = width // cell_size
     rows = height // cell_size
     grid = [[1 for _ in range(cols)] for _ in range(rows)]
 
-    root = BSPNode(0, 0, cols, height=rows)
+    root = BSPNode(0, 0, cols, rows)
 
     def _split(node: BSPNode, depth: int):
         if depth >= max_depth:
@@ -132,4 +132,10 @@ def generate_bsp_grid(width: int, height: int, cell_size: int = 16,
         if c1 and c2:
             carve_corridor(grid, c1, c2, width=2)
 
-    return grid
+    rooms = []
+    for leaf in leaves:
+        if leaf.room:
+            x, y, w, h = leaf.room
+            rooms.append((x, y, w, h))
+
+    return grid, rooms
