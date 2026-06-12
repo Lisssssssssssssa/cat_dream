@@ -28,6 +28,14 @@ class Level:
         self.bg_surface.set_alpha(60)
         self.bg_surface = pygame.transform.scale(self.bg_surface, (cfg.SCREEN_WIDTH * 2, cfg.SCREEN_HEIGHT))
 
+        plat_path = os.path.join(cfg.ASSETS_PATH, 'sprites', 'platform.png')
+        self.platform_sprite = pygame.image.load(plat_path).convert_alpha()
+        self.platform_sprite = pygame.transform.scale(self.platform_sprite, (self.cell_size * 3, self.cell_size))
+
+        ladder_path = os.path.join(cfg.ASSETS_PATH, 'sprites', 'ladder.png')
+        self.ladder_sprite = pygame.image.load(ladder_path).convert_alpha()
+        self.ladder_sprite = pygame.transform.scale(self.ladder_sprite, (self.cell_size, self.cell_size * 3))
+
     def generate(self, max_depth: int = 4):
         print(f"Начинаю генерацию BSP (depth={max_depth}, cell_size={self.cell_size})...")
         self.grid, self.rooms = generate_bsp_grid(
@@ -125,29 +133,33 @@ class Level:
                 print("❌ Нельзя поставить больше платформ!")
                 return
                 # Горизонтальная платформа: 3 клетки в ширину, 1 в высоту
-            for dx in range(3):
+            elif obj_type == "platform":
+                if self.placed_platforms >= self.max_platforms:
+                    print("❌ Нельзя поставить больше платформ!")
+                    return
+
+                # Одна платформа: 3 клетки в ширину, 1 в высоту
                 self.objects.append({
                     'type': 'platform',
-                    'x': (grid_x + dx) * self.cell_size + self.cell_size // 2,
+                    'x': grid_x * self.cell_size + self.cell_size // 2,  # центр первой клетки
                     'y': grid_y * self.cell_size + self.cell_size // 2,
                     'width': self.cell_size * 3,
                     'height': self.cell_size
                 })
-            self.placed_platforms += 1  # 🔥 Увеличиваем счётчик
+                self.placed_platforms += 1  # 🔥 Увеличиваем счётчик
 
         elif obj_type == "ladder":
             if self.placed_ladders >= self.max_ladders:
                 print("❌ Нельзя поставить больше лестниц!")
                 return
-            # Вертикальная лестница: 1 клетка в ширину, 3 в высоту
-            for dy in range(3):
-                self.objects.append({
-                    'type': 'ladder',
-                    'x': grid_x * self.cell_size + self.cell_size // 2,
-                    'y': (grid_y + dy) * self.cell_size + self.cell_size // 2,
-                    'width': self.cell_size,
-                    'height': self.cell_size * 3
-                })
+            # Одна лестница: 1 клетка в ширину, 3 в высоту
+            self.objects.append({
+                'type': 'ladder',
+                'x': grid_x * self.cell_size + self.cell_size // 2,
+                'y': grid_y * self.cell_size + self.cell_size // 2,
+                'width': self.cell_size,
+                'height': self.cell_size * 3
+            })
             self.placed_ladders += 1  # 🔥 Увеличиваем счётчик
 
         else:
@@ -180,8 +192,44 @@ class Level:
 
         # Рисуем объекты
         for obj in self.objects:
+            # Рисуем платформы и лестницы как спрайты
+            if obj['type'] == 'platform':
+                if self.platform_sprite:
+                    rect = pygame.Rect(
+                        obj['x'] - obj.get('width', self.cell_size * 3) // 2 - camera_offset[0],
+                        obj['y'] - obj.get('height', self.cell_size) // 2 - camera_offset[1],
+                        obj.get('width', self.cell_size * 3),
+                        obj.get('height', self.cell_size)
+                    )
+                    screen.blit(self.platform_sprite, rect.topleft)
+                else:
+                    pygame.draw.rect(screen, (100, 100, 150), (
+                        obj['x'] - obj.get('width', self.cell_size * 3) // 2 - camera_offset[0],
+                        obj['y'] - obj.get('height', self.cell_size) // 2 - camera_offset[1],
+                        obj.get('width', self.cell_size * 3),
+                        obj.get('height', self.cell_size)
+                    ))
+                continue
+
+            elif obj['type'] == 'ladder':
+                if self.ladder_sprite:
+                    rect = pygame.Rect(
+                        obj['x'] - obj.get('width', self.cell_size) // 2 - camera_offset[0],
+                        obj['y'] - obj.get('height', self.cell_size * 3) // 2 - camera_offset[1],
+                        obj.get('width', self.cell_size),
+                        obj.get('height', self.cell_size * 3)
+                    )
+                    screen.blit(self.ladder_sprite, rect.topleft)
+                else:
+                    pygame.draw.rect(screen, (80, 80, 120), (
+                        obj['x'] - obj.get('width', self.cell_size) // 2 - camera_offset[0],
+                        obj['y'] - obj.get('height', self.cell_size * 3) // 2 - camera_offset[1],
+                        obj.get('width', self.cell_size),
+                        obj.get('height', self.cell_size * 3)
+                    ))
+                continue
             # Определяем цвет
-            if obj['type'] in cfg.DREAM_TYPES:
+            elif obj['type'] in cfg.DREAM_TYPES:
                 # Используем цвета из cfg.TYPE_COLORS (если есть), иначе серый
                 color = cfg.TYPE_COLORS.get(obj['type'], (128, 128, 128))
             else:
