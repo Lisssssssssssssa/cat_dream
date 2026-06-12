@@ -2,7 +2,6 @@ import pygame
 import config as cfg
 from hub import Hub
 from levels.level import Level
-from levels.validator import LevelValidator
 from ui.toolbar import Toolbar
 from entities.player import Player
 
@@ -13,7 +12,6 @@ def main():
     pygame.display.set_caption("Cat_dreams")
     player = None
     camera = [0, 0]
-    current_level_report = {}
 
     hub = Hub()
     toolbar = Toolbar()
@@ -33,7 +31,7 @@ def main():
                         event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN):
                     current_state = 'BUILDING'
                     level = Level(width=cfg.SCREEN_WIDTH, height=cfg.SCREEN_HEIGHT - 80, cell_size=32)
-                    level.generate(max_depth=3)
+                    level.generate(max_depth=4)
                     print("🏗️ Уровень сгенерирован!")
 
             elif current_state == 'BUILDING':
@@ -41,29 +39,6 @@ def main():
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                     current_state = 'HUB'
                     level = None
-
-                elif event.type == pygame.KEYDOWN and event.key == pygame.K_w:
-                    if level and hub.current_request:
-                        validator = LevelValidator(level.grid, level.cell_size)
-                        report = validator.get_validation_report(
-                            level.start,
-                            level.finish,
-                            level.objects,
-                            hub.current_request.required
-                        )
-                        current_level_report = report
-
-                        print("\n" + "=" * 50)
-                        print("📋 ОТЧЕТ ВАЛИДАЦИИ:")
-                        print(f"   Путь существует: {'✅' if report['path_exists'] else '❌'}")
-                        print(f"   Требования ТЗ:")
-                        for req, status in report['request_fulfilled'].items():
-                            print(f"      - {req}: {'✅' if status else '❌'}")
-                        print(f"   ИТОГ: {'✅ УРОВЕНЬ ГОТОВ' if report['is_valid'] else '❌ ЕСТЬ ОШИБКИ'}")
-                        print("=" * 50 + "\n")
-                    else:
-                        print("⚠️ Нет уровня или ТЗ для проверки!")
-                        current_level_report = {}
 
                 elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     mouse_pos = pygame.mouse.get_pos()
@@ -88,13 +63,9 @@ def main():
                         print("️ Объект удален (ПКМ)")
 
                 elif event.type == pygame.KEYDOWN and event.key == pygame.K_p:
-                    # Используем сохранённый отчёт!
-                    if level and current_level_report.get('is_valid', False):
-                        current_state = 'PLAYING'
-                        player = Player(level.start[0], level.start[1])
-                        print("🐱 Режим игры запущен!")
-                    else:
-                        print("⚠️ Уровень не прошёл валидацию! Нельзя запустить.")
+                    current_state = 'PLAYING'
+                    player = Player(level.start[0], level.start[1])
+                    print("🐱 Режим игры запущен!")
 
         screen.fill(cfg.LIGHT_BLUE)
 
@@ -113,6 +84,22 @@ def main():
         elif current_state == 'PLAYING' and player:
             keys = pygame.key.get_pressed()
             dx = 0
+            # Проверяем, нажата ли E и нет ли задержки
+            if keys[pygame.K_e]:
+                if player.e_cooldown == 0:
+                    # Проверяем сбор
+                    for obj in level.objects[:]:
+                        if obj['type'] in cfg.DREAM_TYPES or obj['type'] == 'toy':
+                            dist = ((player.x - obj['x']) ** 2 + (player.y - obj['y']) ** 2) ** 0.5
+                            if dist < 25:
+                                if obj['type'] in cfg.DREAM_TYPES:
+                                    print(f"✨ Собран сон: {obj['type']}")
+                                    level.collected_types.add(obj['type'])  # 🔥 ДОБАВЬ ЭТУ СТРОКУ
+                                elif obj['type'] == 'toy':
+                                    print("🎉 Собрана игрушка!")
+                                level.objects.remove(obj)
+                                player.e_cooldown = 30  # 0.5 секунды (60 FPS)
+                                break
             if keys[pygame.K_LEFT] or keys[pygame.K_a]: dx = -1
             if keys[pygame.K_RIGHT] or keys[pygame.K_d]: dx = 1
             on_ladder = False
@@ -166,8 +153,18 @@ def main():
             # Проверка победы/поражения (оставляем как есть)
             dist_to_finish = ((player.x - level.finish[0]) ** 2 + (player.y - level.finish[1]) ** 2) ** 0.5
             if dist_to_finish < 30:
-                print("🐱 ПОБЕДА! Сон пройден!")
-                current_state = 'HUB'
+                # 🔥 Проверяем, собраны ли все нужные типы сна
+                required_set = set(hub.current_request.required)
+                if level.collected_types == required_set:
+                    print("🐱 ПОБЕДА! Все нужные сны собраны, лишних нет!")
+                    current_state = 'HUB'
+                else:
+                    if not required_set.issubset(level.collected_types):
+                        needed = required_set - level.collected_types
+                        print(f"🔒 Не все сны собраны! Нужно: {needed}")
+                    else:
+                        extra = level.collected_types - required_set
+                        print(f"🔒 Есть лишние сны: {extra}. Соберите только нужные!")
             for obj in level.objects[:]:  # [:] — копия, чтобы можно было удалять
                 if obj['type'] == 'weapon':
                     dist = ((player.x - obj['x']) ** 2 + (player.y - obj['y']) ** 2) ** 0.5

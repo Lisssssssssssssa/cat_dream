@@ -1,5 +1,7 @@
 from typing import List, Tuple, Dict
 from collections import deque
+from collections import Counter
+import config as cfg
 
 
 class LevelValidator:
@@ -42,23 +44,6 @@ class LevelValidator:
                     queue.append((nx, ny))
 
         return False  # Путь не найден
-
-    def validate_request(self, objects: List[Dict], required: List[str]) -> Dict[str, bool]:
-        """
-        Проверяет, содержит ли уровень все обязательные объекты из ТЗ.
-        Возвращает словарь: {'враг': True, 'финиш': False, ...}
-        """
-        from collections import Counter
-        obj_counts = Counter(obj['type'] for obj in objects)
-
-        result = {}
-        for req in required:
-            if req == "toy":
-                result[req] = obj_counts.get("toy", 0) >= 3
-            else:
-                result[req] = req in obj_counts
-
-        return result
 
     def get_validation_report(self, start: Tuple[int, int], finish: Tuple[int, int],
                               objects: List[Dict], required: List[str]) -> Dict:

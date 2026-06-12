@@ -4,7 +4,6 @@ import pygame
 import config as cfg
 import os
 import random
-from math import dist
 
 
 class Level:
@@ -22,6 +21,7 @@ class Level:
         self.max_platforms = 5
         self.placed_ladders = 0
         self.max_ladders = 10
+        self.collected_types = set()
 
         bg_path = os.path.join(cfg.ASSETS_PATH, 'backgrounds', 'dream_bg.png')
         self.bg_surface = pygame.image.load(bg_path).convert_alpha()
@@ -65,22 +65,54 @@ class Level:
                 self.finish[1] // self.cell_size >= ry and
                 self.finish[1] // self.cell_size < ry + rh):
                 finish_room = room
-        # Выберем 3 комнаты, исключая start/finish
-        available_rooms = [r for r in self.rooms if r != start_room and r != finish_room]
-        if len(available_rooms) >= 3:
-            chosen_rooms = random.sample(available_rooms, 3)
+        corridor_cells = []
+        for y, row in enumerate(self.grid):
+            for x, cell in enumerate(row):
+                if cell == 0:
+                    # Проверяем, не в комнате ли эта клетка
+                    in_room = any(
+                        rx <= x < rx + rw and ry <= y < ry + rh
+                        for rx, ry, rw, rh in self.rooms
+                    )
+                    if not in_room:
+                        corridor_cells.append((x, y))
+
+        # Выбираем 3 случайные клетки из коридоров
+        if len(corridor_cells) >= 3:
+            toy_cells = random.sample(corridor_cells, 3)
         else:
-            chosen_rooms = available_rooms[:]
-        # В центре каждой комнаты ставим игрушку
-        for room in chosen_rooms:
-            rx, ry, rw, rh = room
-            cx = (rx + rw // 2) * self.cell_size + self.cell_size // 2
-            cy = (ry + rh // 2) * self.cell_size + self.cell_size // 2
+            toy_cells = corridor_cells[:]
+
+        # Ставим игрушки в коридорах
+        for gx, gy in toy_cells:
+            cx = gx * self.cell_size + self.cell_size // 2
+            cy = gy * self.cell_size + self.cell_size // 2
             self.objects.append({
                 'type': 'toy',
                 'x': cx,
                 'y': cy,
-                'radius': 12
+                'radius': 5
+            })
+        available_rooms = [r for r in self.rooms if r != start_room and r != finish_room]
+
+        if len(available_rooms) >= 6:
+            selected_rooms = random.sample(available_rooms, 6)
+        else:
+            selected_rooms = available_rooms[:]
+
+        # Перемешиваем типы, чтобы не было порядка
+        random.shuffle(cfg.DREAM_TYPES)
+
+        for i, room in enumerate(selected_rooms):
+            typ = cfg.DREAM_TYPES[i]
+            rx, ry, rw, rh = room
+            cx = (rx + rw // 2) * self.cell_size + self.cell_size // 2
+            cy = (ry + rh // 2) * self.cell_size + self.cell_size // 2
+            self.objects.append({
+                'type': typ,
+                'x': cx,
+                'y': cy,
+                'radius': 8
             })
 
     print(f"Генерация завершена Найдено клеток пола: ")
@@ -148,16 +180,24 @@ class Level:
 
         # Рисуем объекты
         for obj in self.objects:
-            color = {
-                'enemy': (255, 50, 50),
-                'finish': (50, 255, 50),
-                'start': (50, 50, 255),
-                'weapon': (255, 255, 50),
-                'object': (255, 165, 0)
-            }.get(obj['type'], (128, 128, 128))
+            # Определяем цвет
+            if obj['type'] in cfg.DREAM_TYPES:
+                # Используем цвета из cfg.TYPE_COLORS (если есть), иначе серый
+                color = cfg.TYPE_COLORS.get(obj['type'], (128, 128, 128))
+            else:
+                color = {
+                    'enemy': (255, 50, 50),
+                    'finish': (50, 255, 50),
+                    'start': (50, 50, 255),
+                    'weapon': (255, 255, 50),
+                    'object': (255, 165, 0),
+                    'toy': (255, 100, 255),  # ярко-розовый для игрушки
+                }.get(obj['type'], (128, 128, 128))
+
+            radius = obj.get('radius', 8)
             pygame.draw.circle(screen, color,
                                (obj['x'] - camera_offset[0], obj['y'] - camera_offset[1]),
-                               8)
+                               radius)
 
         # Старт и финиш
         pygame.draw.circle(screen, (50, 50, 255),

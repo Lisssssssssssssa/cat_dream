@@ -22,6 +22,7 @@ class Player:
         self.anim_timer = 0
         self.anim_speed = 0.3
         self.has_weapon = False
+        self.e_cooldown = 0
 
         sprite_path = os.path.join(cfg.ASSETS_PATH, 'sprites', 'cat_run.png')
         self.sprite_sheet = pygame.image.load(sprite_path).convert_alpha()
@@ -54,6 +55,8 @@ class Player:
         self.y += self.vel_y
         self.on_ground = False
         self.check_collision(grid, cell_size, is_horizontal=False, objects=level_objects)
+        if self.e_cooldown > 0:
+            self.e_cooldown -= 1
 
     def check_collision(self, grid, cell_size, is_horizontal, objects=None):
         left = int(self.x // cell_size)
