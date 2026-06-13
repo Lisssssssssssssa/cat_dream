@@ -36,6 +36,13 @@ class Level:
         self.ladder_sprite = pygame.image.load(ladder_path).convert_alpha()
         self.ladder_sprite = pygame.transform.scale(self.ladder_sprite, (self.cell_size, self.cell_size * 3))
 
+        self.dream_particle_sprites = []
+        for i in range(6):
+            path = os.path.join(cfg.ASSETS_PATH, 'sprites', f'dream_particle_{i}.png')
+            spr = pygame.image.load(path).convert_alpha()
+            spr = pygame.transform.scale(spr, (32, 32))  # или (16,16)
+            self.dream_particle_sprites.append(spr)
+
     def generate(self, max_depth: int = 4):
         print(f"Начинаю генерацию BSP (depth={max_depth}, cell_size={self.cell_size})...")
         self.grid, self.rooms = generate_bsp_grid(
@@ -230,8 +237,24 @@ class Level:
                 continue
             # Определяем цвет
             elif obj['type'] in cfg.DREAM_TYPES:
-                # Используем цвета из cfg.TYPE_COLORS (если есть), иначе серый
-                color = cfg.TYPE_COLORS.get(obj['type'], (128, 128, 128))
+                # Определяем индекс типа
+                idx = cfg.DREAM_TYPES.index(obj['type'])
+                sprite = self.dream_particle_sprites[idx]
+                if sprite:
+                    rect = pygame.Rect(
+                        obj['x'] - 16 - camera_offset[0],  # 32px → центр = x-16
+                        obj['y'] - 16 - camera_offset[1],
+                        32, 32
+                    )
+                    screen.blit(sprite, rect.topleft)
+                else:
+                    # fallback: круг
+                    color = cfg.TYPE_COLORS.get(obj['type'], (128, 128, 128))
+                    radius = obj.get('radius', 8)
+                    pygame.draw.circle(screen, color,
+                                       (obj['x'] - camera_offset[0], obj['y'] - camera_offset[1]),
+                                       radius)
+                continue
             else:
                 color = {
                     'enemy': (255, 50, 50),
