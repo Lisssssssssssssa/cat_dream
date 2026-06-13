@@ -36,12 +36,13 @@ class Level:
         self.ladder_sprite = pygame.image.load(ladder_path).convert_alpha()
         self.ladder_sprite = pygame.transform.scale(self.ladder_sprite, (self.cell_size, self.cell_size * 3))
 
-        self.dream_particle_sprites = []
-        for i in range(6):
-            path = os.path.join(cfg.ASSETS_PATH, 'sprites', f'dream_particle_{i}.png')
+        self.dream_particle_sprites = {}
+        for typ, filename in cfg.DREAM_TYPE_TO_SPRITE.items():
+            path = os.path.join(cfg.ASSETS_PATH, 'sprites', f'{filename}.png')
+
             spr = pygame.image.load(path).convert_alpha()
-            spr = pygame.transform.scale(spr, (32, 32))  # или (16,16)
-            self.dream_particle_sprites.append(spr)
+            spr = pygame.transform.scale(spr, (32, 32))
+            self.dream_particle_sprites[typ] = spr
 
     def generate(self, max_depth: int = 4):
         print(f"Начинаю генерацию BSP (depth={max_depth}, cell_size={self.cell_size})...")
@@ -237,9 +238,8 @@ class Level:
                 continue
             # Определяем цвет
             elif obj['type'] in cfg.DREAM_TYPES:
-                # Определяем индекс типа
-                idx = cfg.DREAM_TYPES.index(obj['type'])
-                sprite = self.dream_particle_sprites[idx]
+                # 🔥 Берём спрайт по ключу (а не по индексу)
+                sprite = self.dream_particle_sprites.get(obj['type'])
                 if sprite:
                     rect = pygame.Rect(
                         obj['x'] - 16 - camera_offset[0],  # 32px → центр = x-16

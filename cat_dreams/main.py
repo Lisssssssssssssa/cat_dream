@@ -12,6 +12,7 @@ def main():
     pygame.display.set_caption("Cat_dreams")
     player = None
     camera = [0, 0]
+    win_screen_active = False
 
     hub = Hub()
     toolbar = Toolbar()
@@ -157,7 +158,7 @@ def main():
                 required_set = set(hub.current_request.required)
                 if level.collected_types == required_set:
                     print("🐱 ПОБЕДА! Все нужные сны собраны, лишних нет!")
-                    current_state = 'HUB'
+                    win_screen_active = True
                 else:
                     if not required_set.issubset(level.collected_types):
                         needed = required_set - level.collected_types
@@ -189,6 +190,48 @@ def main():
                         player.vel_x = 0
                         player.vel_y = 0
 
+        # --- ЭКРАН ПОБЕДЫ ---
+        if win_screen_active:
+            # Полупрозрачный чёрный фон
+            overlay = pygame.Surface((cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT), pygame.SRCALPHA)
+            overlay.fill((0, 0, 0, 180))  # (R, G, B, A=180)
+            screen.blit(overlay, (0, 0))
+
+            # Бежевый прямоугольник
+            rect_width, rect_height = 400, 200
+            rect_x = (cfg.SCREEN_WIDTH - rect_width) // 2
+            rect_y = (cfg.SCREEN_HEIGHT - rect_height) // 2
+            pygame.draw.rect(screen, (240, 230, 210), (rect_x, rect_y, rect_width, rect_height), border_radius=12)
+            pygame.draw.rect(screen, (180, 160, 140), (rect_x, rect_y, rect_width, rect_height), 3, border_radius=12)
+
+            # Надпись
+            font_big = pygame.font.Font(None, 48)
+            font_small = pygame.font.Font(None, 32)
+            title = font_big.render("Уровень пройден!", True, (50, 30, 10))
+            subtitle = font_small.render(f"«{hub.current_request.name}»", True, (70, 50, 30))
+
+            screen.blit(title, (rect_x + rect_width // 2 - title.get_width() // 2, rect_y + 40))
+            screen.blit(subtitle, (rect_x + rect_width // 2 - subtitle.get_width() // 2, rect_y + 100))
+
+            # Кнопка "Дальше"
+            btn_x = rect_x + rect_width // 2 - 80
+            btn_y = rect_y + 150
+            btn_w, btn_h = 160, 40
+            pygame.draw.rect(screen, (100, 150, 200), (btn_x, btn_y, btn_w, btn_h), border_radius=8)
+            pygame.draw.rect(screen, (60, 100, 160), (btn_x, btn_y, btn_w, btn_h), 2, border_radius=8)
+            btn_text = font_small.render("Дальше", True, (255, 255, 255))
+            screen.blit(btn_text, (
+            btn_x + btn_w // 2 - btn_text.get_width() // 2, btn_y + btn_h // 2 - btn_text.get_height() // 2))
+
+            # Обработка клика по кнопке
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                mx, my = pygame.mouse.get_pos()
+                if btn_x <= mx <= btn_x + btn_w and btn_y <= my <= btn_y + btn_h:
+                    win_screen_active = False
+                    current_state = 'HUB'
+                    player = None
+                    level = None
+                    print("🚪 Вернулись в Хаб.")
         pygame.display.flip()
         clock.tick(60)
 
