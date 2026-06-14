@@ -28,6 +28,7 @@ def main():
 
             if current_state == 'HUB':
                 hub.handle_event(event)
+                hub.draw(screen)
                 if (hub.current_request and not hub.dialogue_active and
                         event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN):
                     current_state = 'BUILDING'
@@ -85,8 +86,22 @@ def main():
         elif current_state == 'PLAYING' and player:
             keys = pygame.key.get_pressed()
             dx = 0
-            # Проверяем, нажата ли E и нет ли задержки
-            if keys[pygame.K_e]:
+            # 🔥 НОВОЕ: Обработка клавиш в режиме игры
+            if keys[pygame.K_ESCAPE]:
+                current_state = 'BUILDING'
+                print("🔧 Вернулись в редактор.")
+            elif keys[pygame.K_r]:  # например, R — рестарт
+                # 🔥 Просто возвращаем игрока на старт
+                player.x = float(level.start[0])
+                player.y = float(level.start[1])
+                player.vel_x = 0
+                player.vel_y = 0
+                # 🔥 Сбрасываем собранные типы сна
+                level.collected_types = set()
+                # 🔥 Сбрасываем cooldown
+                player.e_cooldown = 0
+                print("🔄 Кот возвращён к началу.")
+            elif keys[pygame.K_e]:
                 if player.e_cooldown == 0:
                     # Проверяем сбор
                     for obj in level.objects[:]:
@@ -208,10 +223,7 @@ def main():
             font_big = pygame.font.Font(None, 48)
             font_small = pygame.font.Font(None, 32)
             title = font_big.render("Уровень пройден!", True, (50, 30, 10))
-            subtitle = font_small.render(f"«{hub.current_request.name}»", True, (70, 50, 30))
-
             screen.blit(title, (rect_x + rect_width // 2 - title.get_width() // 2, rect_y + 40))
-            screen.blit(subtitle, (rect_x + rect_width // 2 - subtitle.get_width() // 2, rect_y + 100))
 
             # Кнопка "Дальше"
             btn_x = rect_x + rect_width // 2 - 80
@@ -231,6 +243,7 @@ def main():
                     current_state = 'HUB'
                     player = None
                     level = None
+                    hub.generate_random_request()
                     print("🚪 Вернулись в Хаб.")
         pygame.display.flip()
         clock.tick(60)

@@ -2,11 +2,9 @@ from typing import Dict, List
 
 
 class Request:
-    def __init__(self, name: str, problem: str, required: List[str], forbidden: List[str] = None):
-        self.name = name
+    def __init__(self, problem: str, required: List[str], forbidden: List[str] = None):
         self.problem = problem
         self.required = required
-        self.forbidden = forbidden
 
     def __repr__(self):
-        return f"<Request: {self.name}>"
+        return f"<Request: {self.problem}>"

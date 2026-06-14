@@ -279,7 +279,7 @@ class Level:
                            10, 2)
 
     def remove_object_at(self, x: int, y: int, radius: int = 20):
-        protected_types = {'spike', 'toy', 'start', 'finish'}
+        protected_types = {'spike', 'toy', 'start', 'finish'} | set(cfg.DREAM_TYPES)
         to_remove = []
         for i, obj in enumerate(self.objects):
             if ((obj['x'] - x) ** 2 + (obj['y'] - y) ** 2) <= radius ** 2 and obj.get('type') not in protected_types:
