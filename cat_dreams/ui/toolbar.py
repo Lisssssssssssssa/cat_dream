@@ -7,8 +7,6 @@ class Toolbar:
 
     def __init__(self):
         self.tools = [
-            {"name": "Враг", "type": "enemy", "color": (255, 80, 80)},
-            {"name": "Оружие", "type": "weapon", "color": (255, 255, 80)},
             {"name": "Ластик", "type": "eraser", "color": (100, 100, 100)},
             {"name": "Платформа", "type": "platform", "color": (100, 100, 255)},
             {"name": "Лестница", "type": "ladder", "color": (150, 100, 100)}
@@ -16,7 +14,7 @@ class Toolbar:
         self.selected_index = 0
         self.height = 80  # Чуть выше для удобства
         self.y = cfg.SCREEN_HEIGHT - self.height
-        self.btn_width = 130
+        self.btn_width = 150
         self.btn_height = 55
 
         # Рассчитываем общую ширину всех кнопок с отступами

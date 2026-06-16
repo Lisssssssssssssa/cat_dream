@@ -19,17 +19,25 @@ def main():
     level = None  # Инициализируем уровень как None
     current_state = 'HUB'
     clock = pygame.time.Clock()
+    show_help_screen = False
 
     running = True
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                mx, my = pygame.mouse.get_pos()
+                help_button_radius = 20
+                help_x = 30
+                help_y = cfg.SCREEN_HEIGHT - 30
+                if ((mx - help_x) ** 2 + (my - help_y) ** 2) ** 0.5 <= help_button_radius:
+                    show_help_screen = not show_help_screen  # переключаем
 
             if current_state == 'HUB':
                 hub.handle_event(event)
                 hub.draw(screen)
-                if (hub.current_request and not hub.dialogue_active and
+                if (hub.current_request and
                         event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN):
                     current_state = 'BUILDING'
                     level = Level(width=cfg.SCREEN_WIDTH, height=cfg.SCREEN_HEIGHT - 80, cell_size=32)
@@ -168,6 +176,73 @@ def main():
             player.draw(screen, camera_offset=camera)
             # Проверка победы/поражения (оставляем как есть)
             dist_to_finish = ((player.x - level.finish[0]) ** 2 + (player.y - level.finish[1]) ** 2) ** 0.5
+
+            # --- ОТРИСОВКА КНОПКИ ПОДСКАЗКИ ---
+            help_button_radius = 20
+            help_x = 30  # отступ слева
+            help_y = cfg.SCREEN_HEIGHT - 30  # отступ снизу
+            pygame.draw.circle(screen, (200, 200, 200), (help_x, help_y), help_button_radius)
+            pygame.draw.circle(screen, (100, 100, 100), (help_x, help_y), help_button_radius, 2)  # обводка
+
+            font = pygame.font.Font(None, 32)
+            q_text = font.render("?", True, (0, 0, 0))
+            screen.blit(q_text, (help_x - q_text.get_width() // 2, help_y - q_text.get_height() // 2))
+
+            # --- ОТРИСОВКА ПОДСКАЗКИ (если активна) ---
+            if show_help_screen:
+                # Полупрозрачный фон
+                overlay = pygame.Surface((cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT), pygame.SRCALPHA)
+                overlay.fill((0, 0, 0, 150))
+                screen.blit(overlay, (0, 0))
+
+                # Окно подсказки
+                help_width, help_height = 500, 580
+                help_rect_x = (cfg.SCREEN_WIDTH - help_width) // 2
+                help_rect_y = (cfg.SCREEN_HEIGHT - help_height) // 2
+                pygame.draw.rect(screen, (240, 240, 240), (help_rect_x, help_rect_y, help_width, help_height),
+                                 border_radius=12)
+                pygame.draw.rect(screen, (100, 100, 100), (help_rect_x, help_rect_y, help_width, help_height), 2,
+                                 border_radius=12)
+
+                # Текст подсказки
+                font_title = pygame.font.Font(None, 36)
+                font_normal = pygame.font.Font(None, 28)
+
+                title = font_title.render("Подсказка", True, (0, 0, 0))
+                screen.blit(title, (help_rect_x + help_width // 2 - title.get_width() // 2, help_rect_y + 20))
+
+                y_offset = help_rect_y + 60
+                for i, dream_type in enumerate(cfg.DREAM_TYPES):
+                    # Попробуем загрузить спрайт и отобразить его в подсказке
+                    sprite_filename = cfg.DREAM_TYPE_TO_SPRITE.get(dream_type)
+                    if sprite_filename and hasattr(level, 'dream_particle_sprites'):
+                        sprite = level.dream_particle_sprites.get(dream_type)
+                        if sprite:
+                            # Рисуем спрайт
+                            screen.blit(sprite, (help_rect_x + 20, y_offset + i * 40))
+                        else:
+                            # fallback: рисуем квадратик
+                            pygame.draw.rect(screen, (100, 100, 100), (help_rect_x + 20, y_offset + i * 40, 32, 32))
+                    else:
+                        # fallback: рисуем квадратик
+                        pygame.draw.rect(screen, (100, 100, 100), (help_rect_x + 20, y_offset + i * 40, 32, 32))
+
+                    # Рисуем название типа
+                    text = font_normal.render(f"{dream_type}", True, (0, 0, 0))
+                    screen.blit(text, (help_rect_x + 60, y_offset + i * 40))
+
+                # Кнопки
+                y_offset += len(cfg.DREAM_TYPES) * 30 + 100
+                controls = [
+                    "E — подобрать сон",
+                    "ESC — вернуться в редактор",
+                    "R — перезапустить уровень",
+                    "<-->— движение",
+                    "Пробел — прыжок",
+                ]
+                for i, ctrl in enumerate(controls):
+                    text = font_normal.render(ctrl, True, (0, 0, 0))
+                    screen.blit(text, (help_rect_x + 20, y_offset + i * 25))
             if dist_to_finish < 30:
                 # 🔥 Проверяем, собраны ли все нужные типы сна
                 required_set = set(hub.current_request.required)
