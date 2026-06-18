@@ -32,7 +32,6 @@ class Player:
             frame = self.sprite_sheet.subsurface((0, i * frame_height, self.sprite_sheet.get_width(), frame_height))
             frame = pygame.transform.scale(frame, (self.width, self.height))
             self.frames.append(frame)
-        print(f"✅ Загружено {len(self.frames)} кадров анимации.")
 
     def update(self, grid, cell_size, level_objects=None):
         self.vel_y += self.gravity
@@ -109,19 +108,6 @@ class Player:
 
     def move(self, dx):
         self.vel_x = dx * self.speed
-
-    def pickup_weapon(self):
-        self.has_weapon = True
-        print("⚔️ Кот подобрал оружие!")
-
-    def attack_enemy(self):
-        if self.has_weapon:
-            self.has_weapon = False  # оружие расходуется
-            print("💥 Кот победил врага!")
-            return True
-        else:
-            print("😿 Кот без оружия! Поражение!")
-            return False
 
     def draw(self, screen, camera_offset=(0, 0)):
         self.anim_frame = max(0, min(self.anim_frame, len(self.frames) - 1))

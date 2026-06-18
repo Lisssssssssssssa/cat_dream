@@ -45,7 +45,6 @@ class Level:
             self.dream_particle_sprites[typ] = spr
 
     def generate(self, max_depth: int = 4):
-        print(f"Начинаю генерацию BSP (depth={max_depth}, cell_size={self.cell_size})...")
         self.grid, self.rooms = generate_bsp_grid(
             self.width, self.height,
             cell_size=self.cell_size,
@@ -72,8 +71,8 @@ class Level:
             # Проверим, находится ли start в этой комнате
             if (self.start[0] // self.cell_size >= rx and
                 self.start[0] // self.cell_size < rx + rw and
-                self.start[1] // self.cell_size >= ry and
-                self.start[1] // self.cell_size < ry + rh):
+                    self.start[1] // self.cell_size >= ry and
+                    self.start[1] // self.cell_size < ry + rh):
                 start_room = room
 
             if (self.finish[0] // self.cell_size >= rx and
@@ -154,13 +153,12 @@ class Level:
                     'width': self.cell_size * 3,
                     'height': self.cell_size
                 })
-                self.placed_platforms += 1  # 🔥 Увеличиваем счётчик
+                self.placed_platforms += 1
 
         elif obj_type == "ladder":
             if self.placed_ladders >= self.max_ladders:
                 print("❌ Нельзя поставить больше лестниц!")
                 return
-            # Одна лестница: 1 клетка в ширину, 3 в высоту
             self.objects.append({
                 'type': 'ladder',
                 'x': grid_x * self.cell_size + self.cell_size // 2,
@@ -168,27 +166,19 @@ class Level:
                 'width': self.cell_size,
                 'height': self.cell_size * 3
             })
-            self.placed_ladders += 1  # 🔥 Увеличиваем счётчик
+            self.placed_ladders += 1
 
-        else:
-            # Старая логика для enemy, weapon и т.д.
-            self.objects.append({'type': obj_type, 'x': x, 'y': y})
-
-    def draw(self, screen, camera_offset=(0, 0)):
+    def draw(self, screen):
         """Отрисовывает уровень по сетке с учётом камеры."""
         # Рисуем стены и пол
         screen.fill((10, 5, 30))
-
-        cloud_scroll_x = -camera_offset[0] * 0.5
-        cloud_scroll_y = -camera_offset[1] * 0.3
-        screen.blit(self.bg_surface, (cloud_scroll_x, cloud_scroll_y))
-        screen.blit(self.bg_surface, (cloud_scroll_x + cfg.SCREEN_WIDTH, cloud_scroll_y))
+        screen.blit(self.bg_surface, (0,0))
 
         for y, row in enumerate(self.grid):
             for x, cell in enumerate(row):
                 rect = pygame.Rect(
-                    x * self.cell_size - camera_offset[0],
-                    y * self.cell_size - camera_offset[1],
+                    x * self.cell_size,
+                    y * self.cell_size,
                     self.cell_size, self.cell_size
                 )
                 if cell == 1:
@@ -204,16 +194,16 @@ class Level:
             if obj['type'] == 'platform':
                 if self.platform_sprite:
                     rect = pygame.Rect(
-                        obj['x'] - obj.get('width', self.cell_size * 3) // 2 - camera_offset[0],
-                        obj['y'] - obj.get('height', self.cell_size) // 2 - camera_offset[1],
+                        obj['x'] - obj.get('width', self.cell_size * 3) // 2,
+                        obj['y'] - obj.get('height', self.cell_size) // 2,
                         obj.get('width', self.cell_size * 3),
                         obj.get('height', self.cell_size)
                     )
                     screen.blit(self.platform_sprite, rect.topleft)
                 else:
                     pygame.draw.rect(screen, (100, 100, 150), (
-                        obj['x'] - obj.get('width', self.cell_size * 3) // 2 - camera_offset[0],
-                        obj['y'] - obj.get('height', self.cell_size) // 2 - camera_offset[1],
+                        obj['x'] - obj.get('width', self.cell_size * 3) // 2,
+                        obj['y'] - obj.get('height', self.cell_size) // 2,
                         obj.get('width', self.cell_size * 3),
                         obj.get('height', self.cell_size)
                     ))
@@ -222,28 +212,27 @@ class Level:
             elif obj['type'] == 'ladder':
                 if self.ladder_sprite:
                     rect = pygame.Rect(
-                        obj['x'] - obj.get('width', self.cell_size) // 2 - camera_offset[0],
-                        obj['y'] - obj.get('height', self.cell_size * 3) // 2 - camera_offset[1],
+                        obj['x'] - obj.get('width', self.cell_size) // 2,
+                        obj['y'] - obj.get('height', self.cell_size * 3) // 2,
                         obj.get('width', self.cell_size),
                         obj.get('height', self.cell_size * 3)
                     )
                     screen.blit(self.ladder_sprite, rect.topleft)
                 else:
                     pygame.draw.rect(screen, (80, 80, 120), (
-                        obj['x'] - obj.get('width', self.cell_size) // 2 - camera_offset[0],
-                        obj['y'] - obj.get('height', self.cell_size * 3) // 2 - camera_offset[1],
+                        obj['x'] - obj.get('width', self.cell_size) // 2,
+                        obj['y'] - obj.get('height', self.cell_size * 3) // 2,
                         obj.get('width', self.cell_size),
                         obj.get('height', self.cell_size * 3)
                     ))
                 continue
             # Определяем цвет
             elif obj['type'] in cfg.DREAM_TYPES:
-                # 🔥 Берём спрайт по ключу (а не по индексу)
                 sprite = self.dream_particle_sprites.get(obj['type'])
                 if sprite:
                     rect = pygame.Rect(
-                        obj['x'] - 16 - camera_offset[0],  # 32px → центр = x-16
-                        obj['y'] - 16 - camera_offset[1],
+                        obj['x'] - 16,  # 32px → центр = x-16
+                        obj['y'] - 16,
                         32, 32
                     )
                     screen.blit(sprite, rect.topleft)
@@ -252,30 +241,25 @@ class Level:
                     color = cfg.TYPE_COLORS.get(obj['type'], (128, 128, 128))
                     radius = obj.get('radius', 8)
                     pygame.draw.circle(screen, color,
-                                       (obj['x'] - camera_offset[0], obj['y'] - camera_offset[1]),
+                                       (obj['x'], obj['y']),
                                        radius)
                 continue
             else:
                 color = {
-                    'enemy': (255, 50, 50),
-                    'finish': (50, 255, 50),
-                    'start': (50, 50, 255),
-                    'weapon': (255, 255, 50),
-                    'object': (255, 165, 0),
-                    'toy': (255, 100, 255),  # ярко-розовый для игрушки
+                    'toy': (255, 100, 255),
                 }.get(obj['type'], (128, 128, 128))
 
             radius = obj.get('radius', 8)
             pygame.draw.circle(screen, color,
-                               (obj['x'] - camera_offset[0], obj['y'] - camera_offset[1]),
+                               (obj['x'], obj['y']),
                                radius)
 
         # Старт и финиш
         pygame.draw.circle(screen, (50, 50, 255),
-                           (self.start[0] - camera_offset[0], self.start[1] - camera_offset[1]),
+                           (self.start[0], self.start[1]),
                            10, 2)
         pygame.draw.circle(screen, (50, 255, 50),
-                           (self.finish[0] - camera_offset[0], self.finish[1] - camera_offset[1]),
+                           (self.finish[0], self.finish[1]),
                            10, 2)
 
     def remove_object_at(self, x: int, y: int, radius: int = 20):

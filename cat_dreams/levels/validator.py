@@ -1,7 +1,5 @@
 from typing import List, Tuple, Dict
 from collections import deque
-from collections import Counter
-import config as cfg
 
 
 class LevelValidator:
