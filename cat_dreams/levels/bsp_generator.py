@@ -3,8 +3,19 @@ from typing import List, Tuple, Optional
 
 
 class BSPNode:
-
+    """
+    Узел BSP-дерева. Представляет прямоугольную область уровня,
+    которая может быть разделена на две части или содержать комнату.
+    """
     def __init__(self, x: int, y: int, width: int, height: int):
+        """
+        Инициализация узла BSP.
+        Args:
+            x: Координата X левого верхнего угла.
+            y: Координата Y левого верхнего угла.
+            width: Ширина узла в клетках.
+            height: Высота узла в клетках.
+        """
         self.x = x
         self.y = y
         self.width = width
@@ -14,6 +25,13 @@ class BSPNode:
         self.room: Optional[Tuple[int, int, int, int]] = None  # (x, y, w, h)
 
     def split(self, min_size: int = 8) -> bool:
+        """
+        Пытается разделить узел на два дочерних.
+        Args:
+            min_size: Минимально допустимый размер дочернего узла.
+        Returns:
+            True, если разделение успешно выполнено.
+        """
         if self.left or self.right:
             return False
 
@@ -39,8 +57,14 @@ class BSPNode:
 
         return True
 
-    def create_rooms(self, grid: List[List[int]], min_room: int = 3, padding: int = 1):
-        """Рекурсивно создаёт комнаты в сетке."""
+    def create_rooms(self, grid: List[List[int]], min_room: int = 3, padding: int = 1) -> None:
+        """
+        Рекурсивно создаёт комнаты в листовых узлах дерева.
+        Args:
+            grid: Двумерная сетка уровня для записи проходимых клеток.
+            min_room: Минимальный размер комнаты.
+            padding: Отступ от границ узла при создании комнаты.
+        """
         if self.left or self.right:
             if self.left:
                 self.left.create_rooms(grid, min_room, padding)
@@ -65,6 +89,11 @@ class BSPNode:
                         grid[y][x] = 0
 
     def get_room_center(self) -> Optional[Tuple[int, int]]:
+        """
+        Находит центр первой доступной комнаты в поддереве.
+        Returns:
+            Кортеж координат центра (x, y) или None.
+        """
         if self.room:
             rx, ry, rw, rh = self.room
             return (rx + rw // 2, ry + rh // 2)
@@ -75,7 +104,15 @@ class BSPNode:
         return None
 
 
-def carve_corridor(grid: List[List[int]], start: Tuple[int, int], end: Tuple[int, int], width: int = 2):
+def carve_corridor(grid: List[List[int]], start: Tuple[int, int], end: Tuple[int, int], width: int = 2) -> None:
+    """
+    Вырезает L-образный коридор между двумя точками.
+    Args:
+        grid: Сетка уровня.
+        start: Начальная точка коридора.
+        end: Конечная точка коридора.
+        width: Толщина коридора в клетках.
+    """
     x1, y1 = start
     x2, y2 = end
 
@@ -96,7 +133,18 @@ def carve_corridor(grid: List[List[int]], start: Tuple[int, int], end: Tuple[int
 
 def generate_bsp_grid(width: int, height: int, cell_size: int = 16,
                       max_depth: int = 5, min_size: int = 4) -> Tuple[List[List[int]], List[Tuple[int, int, int, int]]]:
+    """
+    Генерирует карту уровня методом BSP.
+    Args:
+        width: Ширина уровня в пикселях.
+        height: Высота уровня в пикселях.
+        cell_size: Размер одной клетки сетки.
+        max_depth: Максимальная глубина рекурсивного разбиения.
+        min_size: Минимальный размер узла при разбиении.
 
+    Returns:
+        Кортеж из двумерной сетки (1=стена, 0=пол) и списка комнат.
+    """
     cols = width // cell_size
     rows = height // cell_size
     grid = [[1 for _ in range(cols)] for _ in range(rows)]
@@ -104,6 +152,7 @@ def generate_bsp_grid(width: int, height: int, cell_size: int = 16,
     root = BSPNode(0, 0, cols, rows)
 
     def _split(node: BSPNode, depth: int):
+        """Рекурсивное разбиение BSP-дерева."""
         if depth >= max_depth:
             return
         if node.split(min_size):
@@ -111,10 +160,10 @@ def generate_bsp_grid(width: int, height: int, cell_size: int = 16,
             _split(node.right, depth + 1)
 
     _split(root, 0)
-
     root.create_rooms(grid, min_room=2, padding=1)
 
     def collect_leaves(node: BSPNode) -> List[BSPNode]:
+        """Собирает все листовые узлы, содержащие комнаты."""
         if not node.left and not node.right:
             return [node] if node.room else []
         result = []
