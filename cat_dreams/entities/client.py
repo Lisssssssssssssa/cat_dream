@@ -1,4 +1,3 @@
-from typing import Tuple
 import config as cfg
 import pygame.draw
 from requests import Request
